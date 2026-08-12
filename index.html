@@ -1305,90 +1305,392 @@ function renderStats() {
 }
 
 /* ---- Gộp dữ liệu theo Ngày ---- */
-function computeDayValues(filterLoai) {
-  const map = new Map(); // ngay -> value
+/* ============================================================
+   MÀU CHO TỪNG LOẠI CHI / THU
+   ============================================================ */
 
-  const apply = (rows, sign) => {
-    rows.forEach(r => {
-      if (filterLoai && filterLoai !== "Tổng" && r.loai !== filterLoai) return;
-      const prev = map.get(r.ngay) || 0;
-      map.set(r.ngay, prev + sign * (Number(r.tien) || 0));
-    });
+const CATEGORY_COLORS = [
+  "#F97316", // cam
+  "#22C55E", // xanh lá
+  "#3B82F6", // xanh dương
+  "#A855F7", // tím
+  "#EAB308", // vàng
+  "#EC4899", // hồng
+  "#14B8A6", // teal
+  "#EF4444", // đỏ
+  "#6366F1", // indigo
+  "#84CC16"  // lime
+];
+
+const categoryColorMap = new Map();
+
+function getCategoryColor(loai) {
+  if (!categoryColorMap.has(loai)) {
+    const index = categoryColorMap.size % CATEGORY_COLORS.length;
+    categoryColorMap.set(loai, CATEGORY_COLORS[index]);
+  }
+
+  return categoryColorMap.get(loai);
+}
+/* ============================================================
+   GỘP DỮ LIỆU THEO NGÀY + THEO LOẠI
+   ============================================================ */
+
+   function computeDayValues(filterLoai) {
+  const map = new Map();
+
+  const ensureDay = (ngay) => {
+    if (!map.has(ngay)) {
+      map.set(ngay, {
+        chi: new Map(),
+        thu: new Map()
+      });
+    }
+
+    return map.get(ngay);
   };
 
-  // Quy ước: Thu = âm, Chi = dương  =>  Giá trị ngày = -Tổng Thu + Tổng Chi
-  apply(statsData.thu, -1);
-  apply(statsData.chi, +1);
+  // -------------------------
+  // CHI
+  // -------------------------
+  statsData.chi.forEach(r => {
+    if (
+      filterLoai &&
+      filterLoai !== "Tổng" &&
+      r.loai !== filterLoai
+    ) return;
 
-  const days = Array.from(map.keys()).sort(); // yyyy-MM-dd sort được trực tiếp
-  const values = days.map(d => map.get(d));
-  return { days, values };
+    const ngay = ensureDay(r.ngay);
+    const tien = Number(r.tien) || 0;
+
+    ngay.chi.set(
+      r.loai,
+      (ngay.chi.get(r.loai) || 0) + tien
+    );
+  });
+
+  // -------------------------
+  // THU
+  // -------------------------
+  statsData.thu.forEach(r => {
+    if (
+      filterLoai &&
+      filterLoai !== "Tổng" &&
+      r.loai !== filterLoai
+    ) return;
+
+    const ngay = ensureDay(r.ngay);
+    const tien = Number(r.tien) || 0;
+
+    ngay.thu.set(
+      r.loai,
+      (ngay.thu.get(r.loai) || 0) + tien
+    );
+  });
+
+  const days = Array.from(map.keys()).sort();
+
+  // Tổng ròng từng ngày:
+  // Chi - Thu
+  const values = days.map(day => {
+    const data = map.get(day);
+
+    const totalChi = Array.from(data.chi.values())
+      .reduce((a, b) => a + b, 0);
+
+    const totalThu = Array.from(data.thu.values())
+      .reduce((a, b) => a + b, 0);
+
+    return totalChi - totalThu;
+  });
+
+  return {
+    days,
+    values,
+    map
+  };
 }
 
 function renderDayChart() {
   if (!statsData) return;
-  const { days, values } = computeDayValues(currentDayFilter);
+
+  const {
+    days,
+    values,
+    map
+  } = computeDayValues(currentDayFilter);
 
   const total = values.reduce((a, b) => a + b, 0);
   setTotalBox("total-ngay", total, "ngay");
 
   const wrapEl = document.getElementById("chart-ngay-wrap");
+
   if (days.length === 0) {
-    if (dayChart) { dayChart.destroy(); dayChart = null; }
-    wrapEl.innerHTML = '<div class="chart-empty">Chưa có dữ liệu</div>';
+    if (dayChart) {
+      dayChart.destroy();
+      dayChart = null;
+    }
+
+    wrapEl.innerHTML =
+      '<div class="chart-empty">Chưa có dữ liệu</div>';
+
     return;
   }
+
   if (!document.getElementById("chart-ngay")) {
     wrapEl.innerHTML = '<canvas id="chart-ngay"></canvas>';
   }
 
-  // Cho phép cuộn ngang khi nhiều hơn DEFAULT_VISIBLE_DAYS, không mất dữ liệu
-  const minWidth = Math.max(days.length * DAY_BAR_WIDTH_PX, 100);
-  wrapEl.style.width = days.length > DEFAULT_VISIBLE_DAYS ? minWidth + "px" : "100%";
+  const minWidth = Math.max(
+    days.length * DAY_BAR_WIDTH_PX,
+    100
+  );
 
-  const median = computeMedian(values);
-  const barColors = values.map(v => (v > median ? getCss("--do") : getCss("--camnhat")));
+  wrapEl.style.width =
+    days.length > DEFAULT_VISIBLE_DAYS
+      ? minWidth + "px"
+      : "100%";
+
   const labels = days.map(formatDayLabel);
 
-  const ctx = document.getElementById("chart-ngay").getContext("2d");
-  if (dayChart) dayChart.destroy();
+  /*
+   * ==========================================================
+   * TÌM TẤT CẢ CÁC LOẠI
+   * ==========================================================
+   */
+
+  const allLoai = new Set();
+
+  days.forEach(day => {
+    const data = map.get(day);
+
+    data.chi.forEach((_, loai) => allLoai.add(loai));
+    data.thu.forEach((_, loai) => allLoai.add(loai));
+  });
+
+  /*
+   * ==========================================================
+   * DATASET CHO TỪNG LOẠI
+   *
+   * Chi  = số dương
+   * Thu  = số âm
+   * ==========================================================
+   */
+
+  const datasets = [];
+
+  Array.from(allLoai).forEach(loai => {
+    const color = getCategoryColor(loai);
+
+    const data = days.map(day => {
+      const dayData = map.get(day);
+
+      const chi = dayData.chi.get(loai) || 0;
+      const thu = dayData.thu.get(loai) || 0;
+
+      // Chi nằm trên 0
+      // Thu nằm dưới 0
+      return chi > 0 ? chi : -thu;
+    });
+
+    datasets.push({
+      type: "bar",
+
+      label: loai,
+      data,
+
+      backgroundColor: data.map(v =>
+        v > 0
+          ? color
+          : "rgba(255,255,255,0)"
+      ),
+
+      borderColor: data.map(v =>
+        v < 0
+          ? color
+          : "transparent"
+      ),
+
+      borderWidth: data.map(v =>
+        v < 0 ? 3 : 0
+      ),
+
+      /*
+       * THU = nét đứt
+       */
+      borderDash: [6, 5],
+
+      borderRadius: data.map(v =>
+        v > 0 ? 6 : 0
+      ),
+
+      maxBarThickness: 34,
+
+      stack: "money",
+
+      order: 2
+    });
+  });
+
+  /*
+   * ==========================================================
+   * ĐƯỜNG XU HƯỚNG
+   * ==========================================================
+   */
+
+  datasets.push({
+    type: "line",
+
+    label: "Giá trị ròng",
+
+    data: values,
+
+    borderColor: getCss("--cam"),
+
+    backgroundColor: getCss("--cam"),
+
+    borderWidth: 2,
+
+    pointRadius: 3,
+
+    pointHoverRadius: 5,
+
+    tension: 0.35,
+
+    order: 1
+  });
+
+  /*
+   * ==========================================================
+   * TRUNG VỊ
+   * ==========================================================
+   */
+
+  const median = computeMedian(values);
+
+  datasets.push({
+    type: "line",
+
+    label: "Trung vị",
+
+    data: days.map(() => median),
+
+    borderColor: getCss("--cam"),
+
+    borderWidth: 1.5,
+
+    borderDash: [6, 4],
+
+    pointRadius: 0,
+
+    order: 0
+  });
+
+  /*
+   * ==========================================================
+   * RENDER
+   * ==========================================================
+   */
+
+  const ctx =
+    document.getElementById("chart-ngay").getContext("2d");
+
+  if (dayChart) {
+    dayChart.destroy();
+  }
+
   dayChart = new Chart(ctx, {
     data: {
       labels,
-      datasets: [
-        {
-          type: "bar",
-          label: "Giá trị ngày",
-          data: values,
-          backgroundColor: barColors,
-          borderRadius: 6,
-          maxBarThickness: 34,
-          order: 2
-        },
-        {
-          type: "line",
-          label: "Xu hướng",
-          data: values,
-          borderColor: getCss("--cam"),
-          backgroundColor: getCss("--cam"),
-          borderWidth: 2,
-          pointRadius: 3,
-          tension: 0.35,
-          order: 1
-        },
-        {
-          type: "line",
-          label: "Trung vị",
-          data: days.map(() => median),
-          borderColor: getCss("--cam"),
-          borderWidth: 1.5,
-          borderDash: [6, 4],
-          pointRadius: 0,
-          order: 0
-        }
-      ]
+      datasets
     },
-    options: baseChartOptions()
+
+    options: {
+      ...baseChartOptions(),
+
+      interaction: {
+        mode: "index",
+        intersect: false
+      },
+
+      scales: {
+        x: {
+          stacked: true,
+
+          grid: {
+            display: false
+          },
+
+          ticks: {
+            color: "#64748B",
+            font: {
+              family: "'Be Vietnam Pro'",
+              size: 11
+            }
+          }
+        },
+
+        y: {
+          stacked: true,
+
+          grid: {
+            color: "#F1F5F9"
+          },
+
+          ticks: {
+            color: "#64748B",
+
+            font: {
+              family: "'Be Vietnam Pro'",
+              size: 11
+            },
+
+            callback: v =>
+              formatVNDShort(v)
+          },
+
+          /*
+           * Làm trục 0 nổi bật hơn
+           */
+          border: {
+            color: "#CBD5E1",
+            width: 1.5
+          }
+        }
+      },
+
+      plugins: {
+        ...baseChartOptions().plugins,
+
+        legend: {
+          display: false
+        },
+
+        tooltip: {
+          backgroundColor: "#0F172A",
+
+          padding: 10,
+
+          cornerRadius: 8,
+
+          callbacks: {
+            label: ctx => {
+              const value = ctx.parsed.y;
+
+              if (ctx.dataset.type === "line") {
+                return `${ctx.dataset.label}: ${formatVND(value)} đ`;
+              }
+
+              if (value < 0) {
+                return `${ctx.dataset.label} • Thu: ${formatVND(Math.abs(value))} đ`;
+              }
+
+              return `${ctx.dataset.label} • Chi: ${formatVND(value)} đ`;
+            }
+          }
+        }
+      }
+    }
   });
 }
 
