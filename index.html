@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Sổ thu chi qbide</title>
+
+<!-- Fonts: Be Vietnam Pro (hỗ trợ tiếng Việt tốt) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Icon: Material Symbols Rounded -->
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,300..600,0..1,-50..200" />
+
+<!-- Chart.js (Bar + Line kết hợp) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  /* ============================================================
+     MAPSTYLE — giao diện lấy cảm hứng từ ảnh MapStudy
+     Chỉ thay đổi CSS, không đụng vào logic / HTML.
+     ============================================================ */
+  
+  :root{
+    --xam:#F5F7FA;
+    --trang:#FFFFFF;
+  
+    --xanh:#1769A6;
+    --xanh-2:#2B80C2;
+    --xanhnhat:#EAF4FB;
+    --xanhdam:#125886;
+  
+    --vang:#FFF8E8;
+    --cam:#F39A2F;
+    --camnhat:#FFB84D;
+    --do:#E85D5D;
+    --xanhla:#2E9B72;
+  
+    --text:#174A70;
+    --text-mute:#7890A3;
+    --border:#E6EBF0;
+  
+    --radius-sm:7px;
+    --radius-md:10px;
+    --radius-lg:12px;
+    --radius-full:999px;
+  
+    --shadow-sm:0 1px 3px rgba(35,73,102,.035);
+    --shadow-md:0 4px 14px rgba(35,73,102,.055);
+    --shadow-lg:0 10px 30px rgba(35,73,102,.08);
+  
+    --navbar-h:64px;
+    --tabs-h:48px;
+  }
+  
+  /* ============================================================
+     GLOBAL
+     ============================================================ */
+  
+  *{
+    box-sizing:border-box;
+  }
+  
+  html,body{
+    margin:0;
+    padding:0;
+    min-height:100%;
+  }
+  
+  body{
+    font-family:'Be Vietnam Pro',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:var(--xam);
+    color:var(--text);
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    font-size:14px;
+    line-height:1.5;
+  }
+  
+  h1,h2,h3{
+    margin:0;
+  }
+  
+  button,
+  input,
+  select{
+    font-family:inherit;
+  }
+  
+  button{
+    border:none;
+    cursor:pointer;
+    background:none;
+  }
+  
+  .material-symbols-rounded{
+    font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;
+    line-height:1;
+    display:inline-flex;
+  }
+  
+  /* ============================================================
+     NAVBAR — trắng, sạch, giống header của ảnh
+     ============================================================ */
+  
+  .navbar{
+    position:fixed;
+    top:0;
+    left:0;
+    right:0;
+    height:var(--navbar-h);
+  
+    background:rgba(255,255,255,.98);
+    color:var(--text);
+  
+    display:flex;
+    align-items:center;
+  
+    padding:0 28px;
+  
+    z-index:100;
+  
+    border-bottom:1px solid #E9EEF2;
+    box-shadow:0 1px 8px rgba(35,73,102,.035);
+  }
+  
+  .navbar h1{
+    font-size:15px;
+    font-weight:700;
+    color:var(--xanh);
+    letter-spacing:-.15px;
+  }
+  
+  .navbar h1 .muted{
+    font-weight:400;
+    color:var(--text-mute);
+    opacity:1;
+  }
+  
+  /* ============================================================
+     TABS — nhẹ, phẳng, active xanh
+     ============================================================ */
+  
+  .tabs{
+    position:fixed;
+    top:var(--navbar-h);
+    left:0;
+    right:0;
+  
+    height:var(--tabs-h);
+  
+    display:flex;
+    align-items:center;
+    gap:5px;
+  
+    padding:5px 24px;
+  
+    background:#FFFFFF;
+  
+    border-bottom:1px solid #E9EEF2;
+  
+    z-index:90;
+  }
+  
+  .tab-btn{
+    position:relative;
+    flex:0 0 auto;
+  
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  
+    gap:7px;
+  
+    border-radius:7px;
+  
+    background:transparent;
+    color:#7890A3;
+  
+    padding:8px 14px;
+  
+    font-size:12px;
+    font-weight:600;
+  
+    transition:
+      background .18s ease,
+      color .18s ease,
+      transform .12s ease;
+  }
+  
+  .tab-btn:hover{
+    background:#F3F7FA;
+    color:var(--xanh);
+  }
+  
+  .tab-btn:active{
+    transform:scale(.98);
+  }
+  
+  .tab-btn.active{
+    background:var(--xanhnhat);
+    color:var(--xanh);
+  }
+  
+  .tab-btn.active::after{
+    content:"";
+    position:absolute;
+    left:12px;
+    right:12px;
+    bottom:-6px;
+    height:2px;
+    border-radius:2px;
+    background:var(--xanh);
+  }
+  
+  /* ============================================================
+     PAGE / SECTION
+     ============================================================ */
+  
+  .page{
+    display:none;
+  }
+  
+  .page.active{
+    display:block;
+  }
+  
+  .page-content{
+    padding-top:calc(var(--navbar-h) + var(--tabs-h) + 22px);
+  
+    max-width:1100px;
+  
+    margin:0 auto;
+  
+    padding-left:22px;
+    padding-right:22px;
+    padding-bottom:80px;
+  }
+  
+  .section-block{
+    background:var(--trang);
+  
+    border:1px solid #E9EEF2;
+    border-radius:var(--radius-lg);
+  
+    padding:20px;
+  
+    margin-bottom:16px;
+  
+    box-shadow:var(--shadow-sm);
+  
+    scroll-margin-top:calc(var(--navbar-h) + var(--tabs-h) + 12px);
+  }
+  
+  .section-block:hover{
+    border-color:#DFE7ED;
+  }
+  
+  .section-title{
+    display:flex;
+    align-items:center;
+    gap:10px;
+  
+    margin-bottom:16px;
+  }
+  
+  .icon-badge{
+    width:34px;
+    height:34px;
+  
+    border-radius:8px;
+  
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  
+    background:var(--xanhnhat);
+    color:var(--xanh);
+  
+    flex-shrink:0;
+  }
+  
+  .section-title h2{
+    font-size:15px;
+    font-weight:700;
+    color:var(--xanh);
+  
+    letter-spacing:-.1px;
+  }
+  
+  .section-title .total-box{
+    margin-left:auto;
+  
+    padding:6px 11px;
+  
+    border-radius:7px;
+  
+    font-weight:700;
+    font-size:12px;
+  
+    white-space:nowrap;
+  }
+  
+  .total-box.tone-neg-red{
+    background:#FFF1F1;
+    color:var(--do);
+  }
+  
+  .total-box.tone-pos-yellow{
+    background:#FFF7E8;
+    color:#D88918;
+  }
+  
+  .total-box.tone-neg-green{
+    background:#ECF8F3;
+    color:var(--xanhla);
+  }
+  
+  .total-box.tone-pos-blue{
+    background:var(--xanhnhat);
+    color:var(--xanh);
+  }
+  
+  /* ============================================================
+     FORM — input xám nhạt giống các ô trong ảnh
+     ============================================================ */
+  
+  .entry-form{
+    background:var(--trang);
+  
+    border:1px solid #E9EEF2;
+    border-radius:var(--radius-md);
+  
+    padding:18px;
+  
+    box-shadow:none;
+  
+    display:flex;
+    flex-direction:column;
+    gap:13px;
+  }
+  
+  .field{
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  }
+  
+  .field label{
+    font-size:12px;
+    font-weight:600;
+    color:#6F8799;
+  }
+  
+  .field select,
+  .field input[type=text],
+  .field input[type=number]{
+    border:1px solid #E1E8EE;
+  
+    border-radius:8px;
+  
+    padding:10px 12px;
+  
+    font-size:13px;
+  
+    color:#315A75;
+  
+    background:#F3F6F9;
+  
+    outline:none;
+  
+    transition:
+      background .15s ease,
+      border-color .15s ease,
+      box-shadow .15s ease;
+  
+    width:100%;
+  
+    appearance:none;
+  }
+  
+  .field select{
+    background-color:#F3F6F9;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%237890A3' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 11px center;
+    padding-right:36px;
+  }
+  
+  .field select:hover,
+  .field input[type=text]:hover,
+  .field input[type=number]:hover{
+    border-color:#D3DEE7;
+    background:#F0F4F7;
+  }
+  
+  .field select:focus,
+  .field input:focus{
+    border-color:#7DB5D8;
+    background:#FFFFFF;
+  
+    box-shadow:0 0 0 3px rgba(23,105,166,.08);
+  }
+  
+  .money-input{
+    position:relative;
+    display:flex;
+    align-items:center;
+  }
+  
+  .money-input input{
+    padding-right:65px;
+  }
+  
+  .money-suffix{
+    position:absolute;
+    right:12px;
+  
+    font-size:12px;
+    color:var(--text-mute);
+    font-weight:600;
+  
+    pointer-events:none;
+  }
+  
+  .money-preview{
+    font-size:12px;
+    color:var(--xanh-2);
+    font-weight:600;
+  }
+  
+  /* ============================================================
+     SUBMIT BUTTON — xanh MapStudy
+     ============================================================ */
+  
+  .btn-submit{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  
+    gap:7px;
+  
+    background:var(--xanh);
+    color:var(--trang);
+  
+    font-size:13px;
+    font-weight:700;
+  
+    padding:11px 14px;
+  
+    border-radius:8px;
+  
+    box-shadow:0 2px 5px rgba(23,105,166,.12);
+  
+    transition:
+      background .15s ease,
+      box-shadow .15s ease,
+      opacity .15s ease,
+      transform .12s ease;
+  }
+  
+  .btn-submit:hover{
+    background:var(--xanhdam);
+    box-shadow:0 4px 10px rgba(23,105,166,.16);
+  }
+  
+  .btn-submit:active{
+    transform:scale(.985);
+  }
+  
+  .btn-submit:disabled{
+    opacity:.65;
+    cursor:not-allowed;
+  }
+  
+  .btn-submit .spinner{
+    width:15px;
+    height:15px;
+  
+    border:2px solid rgba(255,255,255,.35);
+    border-top-color:#fff;
+  
+    border-radius:50%;
+  
+    animation:spin .7s linear infinite;
+  }
+  
+  @keyframes spin{
+    to{
+      transform:rotate(360deg);
+    }
+  }
+  
+  /* ============================================================
+     FLOATING NAV
+     ============================================================ */
+  
+  .fab-wrap{
+    position:fixed;
+  
+    right:20px;
+    bottom:20px;
+  
+    z-index:200;
+  
+    display:flex;
+    align-items:center;
+  
+    gap:8px;
+  
+    flex-direction:row-reverse;
+  }
+  
+  .fab-menu{
+    display:flex;
+    flex-direction:row-reverse;
+    gap:8px;
+  }
+  
+  .fab-menu-item{
+    width:46px;
+    height:46px;
+  
+    border-radius:50%;
+  
+    background:rgba(255,255,255,.97);
+  
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  
+    border:1px solid #E2E9EE;
+  
+    box-shadow:var(--shadow-md);
+  
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  
+    color:var(--xanh);
+  
+    opacity:0;
+  
+    transform:translateX(12px) scale(.8);
+  
+    pointer-events:none;
+  
+    transition:
+      opacity .2s ease,
+      transform .22s cubic-bezier(.34,1.56,.64,1),
+      background .15s ease;
+  }
+  
+  .fab-menu-item.show{
+    opacity:1;
+    transform:translateX(0) scale(1);
+  
+    pointer-events:auto;
+  }
+  
+  .fab-menu-item:hover{
+    background:var(--xanhnhat);
+  }
+  
+  .fab-menu-item.is-active{
+    background:var(--xanh);
+    color:var(--trang);
+  
+    border-color:var(--xanh);
+  }
+  
+  .fab-main{
+    width:50px;
+    height:50px;
+  
+    border-radius:50%;
+  
+    background:#FFFFFF;
+  
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  
+    border:1px solid #E2E9EE;
+  
+    box-shadow:var(--shadow-md);
+  
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  
+    color:var(--xanh);
+  
+    transition:
+      transform .28s cubic-bezier(.34,1.56,.64,1),
+      background .15s ease,
+      box-shadow .15s ease;
+  }
+  
+  .fab-main:hover{
+    background:var(--xanhnhat);
+    box-shadow:var(--shadow-lg);
+  }
+  
+  .fab-main.open{
+    transform:rotate(90deg);
+  }
+  
+  .fab-main:active{
+    transform:scale(.92);
+  }
+  
+  /* ============================================================
+     FILTER CHIPS
+     ============================================================ */
+  
+  .filter-row{
+    display:flex;
+  
+    gap:7px;
+  
+    overflow-x:auto;
+  
+    padding-bottom:10px;
+    margin-bottom:2px;
+  
+    scrollbar-width:none;
+  }
+  
+  .filter-row::-webkit-scrollbar{
+    display:none;
+  }
+  
+  .chip{
+    flex-shrink:0;
+  
+    padding:6px 12px;
+  
+    border-radius:999px;
+  
+    background:#FFFFFF;
+  
+    border:1px solid #E0E8EE;
+  
+    font-size:12px;
+    font-weight:600;
+  
+    color:#71889A;
+  
+    transition:all .15s ease;
+  }
+  
+  .chip:hover{
+    border-color:#BFD1DE;
+    color:var(--xanh);
+    background:#F8FBFD;
+  }
+  
+  .chip.active{
+    background:var(--xanh);
+    border-color:var(--xanh);
+  
+    color:var(--trang);
+  }
+  
+  /* ============================================================
+     CHART CARD
+     ============================================================ */
+  
+  .chart-card{
+    background:var(--trang);
+  
+    border:1px solid #E9EEF2;
+  
+    border-radius:var(--radius-md);
+  
+    padding:14px 12px 8px;
+  
+    box-shadow:var(--shadow-sm);
+  }
+  
+  .chart-scroll{
+    overflow-x:auto;
+    scrollbar-width:none;
+  }
+  
+  .chart-scroll::-webkit-scrollbar{
+    display:none;
+  }
+  
+  .chart-inner{
+    height:280px;
+    min-width:100%;
+  }
+  
+  .chart-empty{
+    padding:40px 10px;
+  
+    text-align:center;
+  
+    color:var(--text-mute);
+  
+    font-size:13px;
+  }
+  
+  /* ============================================================
+     TOAST
+     ============================================================ */
+  
+  .toast-wrap{
+    position:fixed;
+  
+    top:calc(var(--navbar-h) + 12px);
+  
+    left:50%;
+  
+    transform:translateX(-50%);
+  
+    z-index:300;
+  
+    display:flex;
+    flex-direction:column;
+  
+    gap:6px;
+  
+    width:min(90vw,400px);
+  
+    pointer-events:none;
+  }
+  
+  .toast{
+    padding:10px 14px;
+  
+    border-radius:8px;
+  
+    font-size:13px;
+    font-weight:600;
+  
+    color:var(--trang);
+  
+    box-shadow:var(--shadow-md);
+  
+    display:flex;
+    align-items:center;
+  
+    gap:8px;
+  
+    opacity:0;
+  
+    transform:translateY(-8px);
+  
+    transition:
+      opacity .2s ease,
+      transform .2s ease;
+  }
+  
+  .toast.show{
+    opacity:1;
+    transform:translateY(0);
+  }
+  
+  .toast.success{
+    background:var(--xanhla);
+  }
+  
+  .toast.error{
+    background:var(--do);
+  }
+  
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
+  
+  @media (min-width:900px){
+    .page-content{
+      max-width:1100px;
+    }
+  
+    .entry-form{
+      padding:20px;
+    }
+  }
+  
+  @media (max-width:700px){
+    .navbar{
+      padding:0 16px;
+    }
+  
+    .tabs{
+      padding:6px 12px;
+      overflow-x:auto;
+      scrollbar-width:none;
+    }
+  
+    .tabs::-webkit-scrollbar{
+      display:none;
+    }
+  
+    .page-content{
+      padding-left:12px;
+      padding-right:12px;
+      padding-top:calc(var(--navbar-h) + var(--tabs-h) + 14px);
+    }
+  
+    .section-block{
+      padding:16px;
+      border-radius:10px;
+    }
+  }
+  
+  @media (max-width:380px){
+    .fab-menu-item,
+    .fab-main{
+      width:46px;
+      height:46px;
+    }
+  }
+  </style>
+
+</head>
+<body>
+
+<!-- ================= TOAST ================= -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- ================= INPUT PAGE ================= -->
+<div class="page active" id="page-input">
+  <nav class="navbar"><h1>Sổ thu chi qbide <span class="muted">— Nhập dữ liệu</span></h1></nav>
+  <div class="tabs">
+    <button class="tab-btn active" data-scroll="section-thu">
+      <span class="material-symbols-rounded" style="font-size:18px;">add_circle</span> Thu
+    </button>
+    <button class="tab-btn" data-scroll="section-chi">
+      <span class="material-symbols-rounded" style="font-size:18px;">remove_circle</span> Chi
+    </button>
+  </div>
+
+  <div class="page-content">
+
+    <!-- SECTION THU -->
+    <section class="section-block" id="section-thu">
+      <div class="section-title">
+        <span class="icon-badge"><span class="material-symbols-rounded">add</span></span>
+        <h2>Thu</h2>
+      </div>
+
+      <form class="entry-form" id="form-thu" data-sheet="Thu">
+        <div class="field">
+          <label>Loại</label>
+          <select id="loai-thu" required></select>
+        </div>
+        <div class="field" id="loai-thu-khac-wrap" hidden>
+          <label>Nhập loại khác</label>
+          <input type="text" id="loai-thu-khac" placeholder="VD: Cho thuê nhà">
+        </div>
+        <div class="field">
+          <label>Mô tả</label>
+          <input type="text" id="mota-thu" placeholder="VD: Lương tháng 8">
+        </div>
+        <div class="field">
+          <label>Số tiền (nghìn đồng)</label>
+          <div class="money-input">
+            <input type="number" id="tien-thu" inputmode="decimal" min="0" step="any" placeholder="0" required>
+            <span class="money-suffix">nghìn đ</span>
+          </div>
+          <span class="money-preview" id="tien-thu-preview">= 0 đ</span>
+        </div>
+        <button type="submit" class="btn-submit">
+          <span class="material-symbols-rounded">send</span>
+          <span class="btn-label">Gửi</span>
+        </button>
+      </form>
+    </section>
+
+    <!-- SECTION CHI -->
+    <section class="section-block" id="section-chi">
+      <div class="section-title">
+        <span class="icon-badge"><span class="material-symbols-rounded">remove</span></span>
+        <h2>Chi</h2>
+      </div>
+
+      <form class="entry-form" id="form-chi" data-sheet="Chi">
+        <div class="field">
+          <label>Loại</label>
+          <select id="loai-chi" required></select>
+        </div>
+        <div class="field" id="loai-chi-khac-wrap" hidden>
+          <label>Nhập loại khác</label>
+          <input type="text" id="loai-chi-khac" placeholder="VD: Sửa xe">
+        </div>
+        <div class="field">
+          <label>Mô tả</label>
+          <input type="text" id="mota-chi" placeholder="VD: Ăn trưa">
+        </div>
+        <div class="field">
+          <label>Số tiền (nghìn đồng)</label>
+          <div class="money-input">
+            <input type="number" id="tien-chi" inputmode="decimal" min="0" step="any" placeholder="0" required>
+            <span class="money-suffix">nghìn đ</span>
+          </div>
+          <span class="money-preview" id="tien-chi-preview">= 0 đ</span>
+        </div>
+        <button type="submit" class="btn-submit">
+          <span class="material-symbols-rounded">send</span>
+          <span class="btn-label">Gửi</span>
+        </button>
+      </form>
+    </section>
+
+  </div>
+</div>
+
+<!-- ================= OUTPUT PAGE ================= -->
+<div class="page" id="page-output">
+  <nav class="navbar"><h1>Sổ thu chi qbide <span class="muted">— Thống kê</span></h1></nav>
+  <div class="tabs">
+    <button class="tab-btn active" data-scroll="section-ngay">
+      <span class="material-symbols-rounded" style="font-size:18px;">calendar_month</span> Ngày
+    </button>
+    <button class="tab-btn" data-scroll="section-loai">
+      <span class="material-symbols-rounded" style="font-size:18px;">category</span> Loại
+    </button>
+  </div>
+
+  <div class="page-content">
+
+    <!-- SECTION THEO NGÀY -->
+    <section class="section-block" id="section-ngay">
+      <div class="section-title">
+        <span class="icon-badge"><span class="material-symbols-rounded">calendar_month</span></span>
+        <h2>Ngày</h2>
+        <span class="total-box" id="total-ngay">0 đ</span>
+      </div>
+
+      <div class="filter-row" id="filter-ngay"></div>
+
+      <div class="chart-card">
+        <div class="chart-scroll">
+          <div class="chart-inner" id="chart-ngay-wrap">
+            <canvas id="chart-ngay"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION THEO LOẠI -->
+    <section class="section-block" id="section-loai">
+      <div class="section-title">
+        <span class="icon-badge"><span class="material-symbols-rounded">shopping_basket</span></span>
+        <h2>Loại</h2>
+        <span class="total-box" id="total-loai">0 đ</span>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-scroll">
+          <div class="chart-inner" id="chart-loai-wrap">
+            <canvas id="chart-loai"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- ================= FLOATING NAV BUTTON ================= -->
+<div class="fab-wrap">
+  <button class="fab-main" id="fabMain" aria-label="Menu">
+    <span class="material-symbols-rounded">menu</span>
+  </button>
+  <div class="fab-menu" id="fabMenu">
+    <button class="fab-menu-item is-active" data-page="page-input" data-nav="input" aria-label="Nhập">
+      <span class="material-symbols-rounded">edit_note</span>
+    </button>
+    <button class="fab-menu-item" data-page="page-output" data-nav="output" aria-label="Thống kê">
+      <span class="material-symbols-rounded">bar_chart</span>
+    </button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — SỬA CÁC GIÁ TRỊ DƯỚI ĐÂY THEO GOOGLE APPS SCRIPT CỦA BẠN
+   ============================================================ */
+
+// GOOGLE SHEETS API / WEB APP URL
+// -> Dán URL Web App (từ Deploy > New deployment) của Google Apps Script (Code.gs) vào đây.
+// -> Không hard-code thông tin bí mật khác ngoài URL này.
+const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbwGiTI9E4VB1BCaEmx_1b9IwtHZUzBz8KM24q_OnLMWjptK2Se7ksfEKnJj4r9AyZV7cw/exec";
+
+// Đường dẫn tới file cấu hình danh sách Loại Thu/Chi (không hard-code trong HTML)
+const DATA_JSON_URL = "data.json";
+
+// Số ngày tối đa hiển thị mặc định trên biểu đồ Ngày (có thể scroll ngang để xem thêm)
+const DEFAULT_VISIBLE_DAYS = 7;
+// Độ rộng (px) dành cho mỗi cột ngày trên biểu đồ — chỉnh ở đây nếu muốn cột to/nhỏ hơn
+const DAY_BAR_WIDTH_PX = 64;
+// Độ rộng (px) dành cho mỗi cột loại trên biểu đồ Loại
+const CATEGORY_BAR_WIDTH_PX = 90;
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let categoriesData = { thu: [], chi: [] };
+let statsData = null;          // { thu: [...], chi: [...] } — cache từ Google Sheets
+let statsLoaded = false;
+let currentDayFilter = "Tổng";
+let dayChart = null;
+let categoryChart = null;
+let currentPage = "input";
+
+/* ============================================================
+   INIT
+   ============================================================ */
+document.addEventListener("DOMContentLoaded", () => {
+  loadCategoryConfig();
+  setupTabs();
+  setupFab();
+  setupForms();
+});
+
+/* ============================================================
+   1. ĐỌC data.json ĐỂ ĐỔ VÀO DROPDOWN LOẠI
+   ============================================================ */
+async function loadCategoryConfig() {
+  try {
+    const res = await fetch(DATA_JSON_URL, { cache: "no-store" });
+    categoriesData = await res.json();
+  } catch (err) {
+    console.error("Không đọc được data.json:", err);
+    categoriesData = { thu: [], chi: [] };
+  }
+  fillSelect("loai-thu", categoriesData.thu || []);
+  fillSelect("loai-chi", categoriesData.chi || []);
+}
+
+function fillSelect(selectId, list) {
+  const select = document.getElementById(selectId);
+  select.innerHTML = "";
+  const items = [...list];
+  if (!items.includes("Khác")) items.push("Khác");
+  items.forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+
+  const wrapId = selectId === "loai-thu" ? "loai-thu-khac-wrap" : "loai-chi-khac-wrap";
+  select.addEventListener("change", () => {
+    document.getElementById(wrapId).hidden = select.value !== "Khác";
+  });
+}
+
+/* ============================================================
+   2. TABS: SCROLL MƯỢT + HIGHLIGHT THEO VỊ TRÍ SCROLL
+   ============================================================ */
+function setupTabs() {
+  document.querySelectorAll(".tabs").forEach(tabBar => {
+    tabBar.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const target = document.getElementById(btn.dataset.scroll);
+        target.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+  });
+
+  // Highlight tab tương ứng khi người dùng tự scroll tay
+  const observerOptions = { rootMargin: "-45% 0px -45% 0px", threshold: 0 };
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      if (!entry.isIntersecting) return;
+      const id = entry.target.id;
+      const page = entry.target.closest(".page");
+      if (!page) return;
+      page.querySelectorAll(".tab-btn").forEach(b => {
+        b.classList.toggle("active", b.dataset.scroll === id);
+      });
+    });
+  }, observerOptions);
+
+  ["section-thu", "section-chi", "section-ngay", "section-loai"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) observer.observe(el);
+  });
+}
+
+/* ============================================================
+   3. FLOATING BUTTON + MENU (Nhập / Thống kê)
+   ============================================================ */
+function setupFab() {
+  const fabMain = document.getElementById("fabMain");
+  const fabMenu = document.getElementById("fabMenu");
+  const items = fabMenu.querySelectorAll(".fab-menu-item");
+
+  fabMain.addEventListener("click", () => {
+    const isOpen = fabMain.classList.toggle("open");
+    items.forEach(item => item.classList.toggle("show", isOpen));
+  });
+
+  items.forEach(item => {
+    item.addEventListener("click", () => {
+      goToPage(item.dataset.nav);
+      fabMain.classList.remove("open");
+      items.forEach(i => i.classList.remove("show"));
+    });
+  });
+}
+
+function goToPage(nav) {
+  currentPage = nav;
+  document.getElementById("page-input").classList.toggle("active", nav === "input");
+  document.getElementById("page-output").classList.toggle("active", nav === "output");
+
+  document.querySelectorAll(".fab-menu-item").forEach(el => {
+    el.classList.toggle("is-active", el.dataset.nav === nav);
+  });
+
+  if (nav === "output") {
+    loadStatsData(); // lazy-load dữ liệu thống kê từ Google Sheets khi cần
+  }
+}
+
+/* ============================================================
+   4. FORM NHẬP LIỆU (Thu / Chi)
+   ============================================================ */
+function setupForms() {
+  setupMoneyPreview("tien-thu", "tien-thu-preview");
+  setupMoneyPreview("tien-chi", "tien-chi-preview");
+
+  document.getElementById("form-thu").addEventListener("submit", e => handleSubmit(e, "thu"));
+  document.getElementById("form-chi").addEventListener("submit", e => handleSubmit(e, "chi"));
+}
+
+function setupMoneyPreview(inputId, previewId) {
+  const input = document.getElementById(inputId);
+  const preview = document.getElementById(previewId);
+  input.addEventListener("input", () => {
+    const nghin = parseFloat(input.value) || 0;
+    preview.textContent = "= " + formatVND(nghin * 1000) + " đ";
+  });
+}
+
+async function handleSubmit(e, kind) {
+  e.preventDefault();
+  const form = e.target;
+  const sheet = form.dataset.sheet; // "Thu" | "Chi"
+
+  const loaiSelect = document.getElementById(`loai-${kind}`);
+  const loaiKhac = document.getElementById(`loai-${kind}-khac`);
+  const mota = document.getElementById(`mota-${kind}`).value.trim();
+  const tienInput = document.getElementById(`tien-${kind}`);
+  const tienNghin = parseFloat(tienInput.value);
+
+  const loai = loaiSelect.value === "Khác" && loaiKhac.value.trim()
+    ? loaiKhac.value.trim()
+    : loaiSelect.value;
+
+  // ---- Validate ----
+  if (!loai) { showToast("Vui lòng chọn Loại", "error"); return; }
+  if (!tienNghin || tienNghin <= 0) { showToast("Vui lòng nhập số tiền hợp lệ", "error"); return; }
+
+  const payload = {
+    sheet: sheet,
+    ngay: todayISO(),
+    loai: loai,
+    tien: Math.round(tienNghin * 1000),
+    mota: mota
+  };
+
+  const btn = form.querySelector(".btn-submit");
+  setButtonLoading(btn, true);
+
+  try {
+    await postToSheet(payload);
+    showToast("Đã lưu giao dịch thành công", "success");
+    resetForm(kind);
+    statsLoaded = false; // để lần sau vào trang Thống kê sẽ tải lại dữ liệu mới
+  } catch (err) {
+    console.error(err);
+    showToast("Gửi thất bại, vui lòng thử lại", "error");
+    // Không xoá dữ liệu form khi gửi thất bại
+  } finally {
+    setButtonLoading(btn, false);
+  }
+}
+
+function resetForm(kind) {
+  document.getElementById(`form-${kind}`).reset();
+  document.getElementById(`loai-${kind}-khac-wrap`).hidden = true;
+  document.getElementById(`tien-${kind}-preview`).textContent = "= 0 đ";
+}
+
+function setButtonLoading(btn, loading) {
+  btn.disabled = loading;
+  const label = btn.querySelector(".btn-label");
+  const icon = btn.querySelector(".material-symbols-rounded");
+  if (loading) {
+    icon.textContent = "";
+    icon.classList.remove("material-symbols-rounded");
+    icon.classList.add("spinner");
+    label.textContent = "Đang gửi...";
+  } else {
+    icon.classList.remove("spinner");
+    icon.classList.add("material-symbols-rounded");
+    icon.textContent = "send";
+    label.textContent = "Gửi";
+  }
+}
+
+/* ============================================================
+   5. GIAO TIẾP VỚI GOOGLE SHEETS (qua Google Apps Script Web App)
+   ============================================================ */
+async function postToSheet(payload) {
+  if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL.includes("YOUR_")) {
+    throw new Error("Chưa cấu hình GOOGLE_SHEET_URL");
+  }
+  // Dùng Content-Type: text/plain để tránh CORS preflight với Apps Script
+  const res = await fetch(GOOGLE_SHEET_URL, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+  if (!data.success) throw new Error(data.error || "Unknown error");
+  return data;
+}
+
+async function fetchSheetData() {
+  if (!GOOGLE_SHEET_URL || GOOGLE_SHEET_URL.includes("YOUR_")) {
+    throw new Error("Chưa cấu hình GOOGLE_SHEET_URL");
+  }
+
+  const url = GOOGLE_SHEET_URL + "?action=list";
+
+  console.log("Đang tải dữ liệu từ:", url);
+
+  const response = await fetch(url, {
+    method: "GET",
+    cache: "no-store"
+  });
+
+  console.log("HTTP status:", response.status);
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error("Server response:", text);
+    throw new Error(`HTTP ${response.status}`);
+  }
+
+  const data = await response.json();
+
+  console.log("Google Sheet data:", data);
+
+  if (!data.success) {
+    throw new Error(data.error || "Google Apps Script trả về lỗi");
+  }
+
+  return {
+    thu: Array.isArray(data.thu) ? data.thu : [],
+    chi: Array.isArray(data.chi) ? data.chi : []
+  };
+}
+
+/* ============================================================
+   6. TẢI & TÍNH TOÁN DỮ LIỆU THỐNG KÊ
+   ============================================================ */
+async function loadStatsData() {
+  if (statsLoaded) { renderStats(); return; }
+  try {
+    statsData = await fetchSheetData();
+    statsLoaded = true;
+    buildDayFilterChips();
+    renderStats();
+  } catch (err) {
+    console.error(err);
+    showToast("Không tải được dữ liệu thống kê", "error");
+  }
+}
+
+function buildDayFilterChips() {
+  const allLoai = new Set();
+  statsData.thu.forEach(r => allLoai.add(r.loai));
+  statsData.chi.forEach(r => allLoai.add(r.loai));
+
+  const wrap = document.getElementById("filter-ngay");
+  wrap.innerHTML = "";
+  const chips = ["Tổng", ...Array.from(allLoai)];
+  chips.forEach(name => {
+    const chip = document.createElement("button");
+    chip.className = "chip" + (name === currentDayFilter ? " active" : "");
+    chip.textContent = name;
+    chip.addEventListener("click", () => {
+      currentDayFilter = name;
+      wrap.querySelectorAll(".chip").forEach(c => c.classList.toggle("active", c.textContent === name));
+      renderDayChart();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+function renderStats() {
+  renderDayChart();
+  renderCategoryChart();
+}
+
+/* ---- Gộp dữ liệu theo Ngày ---- */
+function computeDayValues(filterLoai) {
+  const map = new Map(); // ngay -> value
+
+  const apply = (rows, sign) => {
+    rows.forEach(r => {
+      if (filterLoai && filterLoai !== "Tổng" && r.loai !== filterLoai) return;
+      const prev = map.get(r.ngay) || 0;
+      map.set(r.ngay, prev + sign * (Number(r.tien) || 0));
+    });
+  };
+
+  // Quy ước: Thu = âm, Chi = dương  =>  Giá trị ngày = -Tổng Thu + Tổng Chi
+  apply(statsData.thu, -1);
+  apply(statsData.chi, +1);
+
+  const days = Array.from(map.keys()).sort(); // yyyy-MM-dd sort được trực tiếp
+  const values = days.map(d => map.get(d));
+  return { days, values };
+}
+
+function renderDayChart() {
+  if (!statsData) return;
+  const { days, values } = computeDayValues(currentDayFilter);
+
+  const total = values.reduce((a, b) => a + b, 0);
+  setTotalBox("total-ngay", total, "ngay");
+
+  const wrapEl = document.getElementById("chart-ngay-wrap");
+  if (days.length === 0) {
+    if (dayChart) { dayChart.destroy(); dayChart = null; }
+    wrapEl.innerHTML = '<div class="chart-empty">Chưa có dữ liệu</div>';
+    return;
+  }
+  if (!document.getElementById("chart-ngay")) {
+    wrapEl.innerHTML = '<canvas id="chart-ngay"></canvas>';
+  }
+
+  // Cho phép cuộn ngang khi nhiều hơn DEFAULT_VISIBLE_DAYS, không mất dữ liệu
+  const minWidth = Math.max(days.length * DAY_BAR_WIDTH_PX, 100);
+  wrapEl.style.width = days.length > DEFAULT_VISIBLE_DAYS ? minWidth + "px" : "100%";
+
+  const median = computeMedian(values);
+  const barColors = values.map(v => (v > median ? getCss("--do") : getCss("--camnhat")));
+  const labels = days.map(formatDayLabel);
+
+  const ctx = document.getElementById("chart-ngay").getContext("2d");
+  if (dayChart) dayChart.destroy();
+  dayChart = new Chart(ctx, {
+    data: {
+      labels,
+      datasets: [
+        {
+          type: "bar",
+          label: "Giá trị ngày",
+          data: values,
+          backgroundColor: barColors,
+          borderRadius: 6,
+          maxBarThickness: 34,
+          order: 2
+        },
+        {
+          type: "line",
+          label: "Xu hướng",
+          data: values,
+          borderColor: getCss("--cam"),
+          backgroundColor: getCss("--cam"),
+          borderWidth: 2,
+          pointRadius: 3,
+          tension: 0.35,
+          order: 1
+        },
+        {
+          type: "line",
+          label: "Trung vị",
+          data: days.map(() => median),
+          borderColor: getCss("--cam"),
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          order: 0
+        }
+      ]
+    },
+    options: baseChartOptions()
+  });
+}
+
+/* ---- Gộp dữ liệu theo Loại ---- */
+function computeCategoryValues() {
+  const map = new Map();
+  statsData.thu.forEach(r => map.set(r.loai, (map.get(r.loai) || 0) - (Number(r.tien) || 0)));
+  statsData.chi.forEach(r => map.set(r.loai, (map.get(r.loai) || 0) + (Number(r.tien) || 0)));
+  const names = Array.from(map.keys());
+  const values = names.map(n => map.get(n));
+  return { names, values };
+}
+
+function renderCategoryChart() {
+  if (!statsData) return;
+  const { names, values } = computeCategoryValues();
+
+  const total = values.reduce((a, b) => a + b, 0);
+  setTotalBox("total-loai", total, "loai");
+
+  const wrapEl = document.getElementById("chart-loai-wrap");
+  if (names.length === 0) {
+    if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
+    wrapEl.innerHTML = '<div class="chart-empty">Chưa có dữ liệu</div>';
+    return;
+  }
+  if (!document.getElementById("chart-loai")) {
+    wrapEl.innerHTML = '<canvas id="chart-loai"></canvas>';
+  }
+
+  const minWidth = Math.max(names.length * CATEGORY_BAR_WIDTH_PX, 100);
+  wrapEl.style.width = names.length > DEFAULT_VISIBLE_DAYS ? minWidth + "px" : "100%";
+
+  const median = computeMedian(values);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const barColors = values.map(v => interpolateColor(v, min, max, getCss("--xanh"), getCss("--xanhdam")));
+
+  const ctx = document.getElementById("chart-loai").getContext("2d");
+  if (categoryChart) categoryChart.destroy();
+  categoryChart = new Chart(ctx, {
+    data: {
+      labels: names,
+      datasets: [
+        {
+          type: "bar",
+          label: "Giá trị theo loại",
+          data: values,
+          backgroundColor: barColors,
+          borderRadius: 6,
+          maxBarThickness: 40,
+          order: 2
+        },
+        {
+          type: "line",
+          label: "Xu hướng",
+          data: values,
+          borderColor: getCss("--xanhdam"),
+          backgroundColor: getCss("--xanhdam"),
+          borderWidth: 2,
+          pointRadius: 3,
+          tension: 0.35,
+          order: 1
+        },
+        {
+          type: "line",
+          label: "Trung vị",
+          data: names.map(() => median),
+          borderColor: getCss("--xanhdam"),
+          borderWidth: 1.5,
+          borderDash: [6, 4],
+          pointRadius: 0,
+          order: 0
+        }
+      ]
+    },
+    options: baseChartOptions()
+  });
+}
+
+/* ---- Cấu hình chung cho chart (SỬA Ở ĐÂY nếu muốn đổi style biểu đồ) ---- */
+function baseChartOptions() {
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: "#0F172A",
+        padding: 10,
+        cornerRadius: 8,
+        callbacks: {
+          label: ctx => formatVND(ctx.parsed.y) + " đ"
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+        ticks: { color: "#64748B", font: { family: "'Be Vietnam Pro'", size: 11 } }
+      },
+      y: {
+        grid: { color: "#F1F5F9" },
+        ticks: {
+          color: "#64748B",
+          font: { family: "'Be Vietnam Pro'", size: 11 },
+          callback: v => formatVNDShort(v)
+        }
+      }
+    }
+  };
+}
+
+/* ============================================================
+   7. TOTAL BOX — MÀU SẮC THEO ÂM/DƯƠNG (mục 10 & 14 trong spec)
+   ============================================================ */
+function setTotalBox(elId, total, kind) {
+  const el = document.getElementById(elId);
+  el.textContent = formatVND(total) + " đ";
+  el.classList.remove("tone-neg-red", "tone-pos-yellow", "tone-neg-green", "tone-pos-blue");
+
+  if (kind === "ngay") {
+    el.classList.add(total < 0 ? "tone-neg-red" : "tone-pos-yellow");
+  } else {
+    el.classList.add(total < 0 ? "tone-neg-green" : "tone-pos-blue");
+  }
+}
+
+/* ============================================================
+   8. HÀM TIỆN ÍCH
+   ============================================================ */
+function formatVND(n) {
+  const sign = n < 0 ? "-" : "";
+  return sign + Math.abs(Math.round(n)).toLocaleString("vi-VN");
+}
+function formatVNDShort(n) {
+  const abs = Math.abs(n);
+  if (abs >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, "") + "tr";
+  if (abs >= 1000) return (n / 1000).toFixed(0) + "k";
+  return String(n);
+}
+function computeMedian(arr) {
+  if (!arr.length) return 0;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+function todayISO() {
+  const d = new Date();
+  const pad = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+function formatDayLabel(iso) {
+  const [y, m, d] = iso.split("-");
+  return `${d}/${m}`;
+}
+function getCss(varName) {
+  return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+}
+function hexToRgb(hex) {
+  const h = hex.replace("#", "");
+  return {
+    r: parseInt(h.substring(0, 2), 16),
+    g: parseInt(h.substring(2, 4), 16),
+    b: parseInt(h.substring(4, 6), 16)
+  };
+}
+function interpolateColor(value, min, max, hexFrom, hexTo) {
+  const range = max - min || 1;
+  const t = Math.min(1, Math.max(0, (value - min) / range));
+  const c1 = hexToRgb(hexFrom), c2 = hexToRgb(hexTo);
+  const r = Math.round(c1.r + (c2.r - c1.r) * t);
+  const g = Math.round(c1.g + (c2.g - c1.g) * t);
+  const b = Math.round(c1.b + (c2.b - c1.b) * t);
+  return `rgb(${r},${g},${b})`;
+}
+
+/* ============================================================
+   9. TOAST NOTIFICATION
+   ============================================================ */
+function showToast(message, type) {
+  const wrap = document.getElementById("toastWrap");
+  const toast = document.createElement("div");
+  toast.className = `toast ${type}`;
+  const icon = type === "success" ? "check_circle" : "error";
+  toast.innerHTML = `<span class="material-symbols-rounded" style="font-size:18px;">${icon}</span><span>${message}</span>`;
+  wrap.appendChild(toast);
+  requestAnimationFrame(() => toast.classList.add("show"));
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 250);
+  }, 3000);
+}
+</script>
+</body>
+</html>
