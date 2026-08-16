@@ -766,7 +766,18 @@
   .toast.error{
     background:var(--do);
   }
-  
+  #chart-ngay-wrap {
+  overflow-y: auto;
+  overflow-x: auto;
+
+  /* Hide scrollbar */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+#chart-ngay-wrap::-webkit-scrollbar {
+  display: none;
+}
   /* ============================================================
      RESPONSIVE
      ============================================================ */
@@ -994,7 +1005,7 @@ const DATA_JSON_URL = "data.json";
 // Số ngày tối đa hiển thị mặc định trên biểu đồ Ngày (có thể scroll ngang để xem thêm)
 const DEFAULT_VISIBLE_DAYS = 7;
 // Độ rộng (px) dành cho mỗi cột ngày trên biểu đồ — chỉnh ở đây nếu muốn cột to/nhỏ hơn
-const DAY_BAR_WIDTH_PX = 64;
+const DAY_BAR_WIDTH_PX = 40;
 // Độ rộng (px) dành cho mỗi cột loại trên biểu đồ Loại
 const CATEGORY_BAR_WIDTH_PX = 90;
 
@@ -1410,7 +1421,8 @@ function getCategoryColor(loai) {
     map
   };
 }
-
+const DAY_CHART_VIEW_HEIGHT = 420; // visible chart height
+const DAY_CHART_BASE_HEIGHT = 420;
 function renderDayChart() {
   if (!statsData) return;
 
@@ -1441,6 +1453,12 @@ function renderDayChart() {
     wrapEl.innerHTML = '<canvas id="chart-ngay"></canvas>';
   }
 
+  const canvas = document.getElementById("chart-ngay");
+
+  // =========================
+  // WIDTH
+  // =========================
+
   const minWidth = Math.max(
     days.length * DAY_BAR_WIDTH_PX,
     100
@@ -1451,249 +1469,173 @@ function renderDayChart() {
       ? minWidth + "px"
       : "100%";
 
+
+  // =========================
+  // MEDIAN / Y VIEW RANGE
+  // =========================
+
+  const sortedValues = [...values]
+    .filter(v => v > 0)
+    .sort((a, b) => a - b);
+
+  let median = 0;
+
+  if (sortedValues.length > 0) {
+    const mid = Math.floor(sortedValues.length / 2);
+
+    median =
+      sortedValues.length % 2 === 0
+        ? (sortedValues[mid - 1] + sortedValues[mid]) / 2
+        : sortedValues[mid];
+  }
+
+  // Visible Y range
+  const visibleMax = Math.max(median * 2, 1);
+
+  // Real maximum
+  const realMax = Math.max(...values, visibleMax);
+
+
+  // =========================
+  // CHART HEIGHT
+  // =========================
+
+  const scaleRatio = realMax / visibleMax;
+
+  // The viewport stays fixed.
+  // The actual canvas becomes taller when there
+  // are values above median * 2.
+  const chartHeight = Math.max(
+    DAY_CHART_BASE_HEIGHT * scaleRatio,
+    DAY_CHART_BASE_HEIGHT
+  );
+
+  wrapEl.style.height =
+    DAY_CHART_VIEW_HEIGHT + "px";
+
+  wrapEl.style.overflowY = "auto";
+  wrapEl.style.overflowX = "auto";
+
+
+  // Make canvas physically taller
+  canvas.style.height = chartHeight + "px";
+  canvas.style.width = "100%";
+
+
+  // =========================
+  // LABELS
+  // =========================
+
   const labels = days.map(formatDayLabel);
 
-  /*
-   * ==========================================================
-   * TÌM TẤT CẢ CÁC LOẠI
-   * ==========================================================
-   */
 
-  const allLoai = new Set();
-
-  days.forEach(day => {
-    const data = map.get(day);
-
-    data.chi.forEach((_, loai) => allLoai.add(loai));
-    data.thu.forEach((_, loai) => allLoai.add(loai));
-  });
-
-  /*
-   * ==========================================================
-   * DATASET CHO TỪNG LOẠI
-   *
-   * Chi  = số dương
-   * Thu  = số âm
-   * ==========================================================
-   */
-
-  const datasets = [];
-
-  Array.from(allLoai).forEach(loai => {
-    const color = getCategoryColor(loai);
-
-    const data = days.map(day => {
-      const dayData = map.get(day);
-
-      const chi = dayData.chi.get(loai) || 0;
-      const thu = dayData.thu.get(loai) || 0;
-
-      // Chi nằm trên 0
-      // Thu nằm dưới 0
-      return chi > 0 ? chi : -thu;
-    });
-
-    datasets.push({
-      type: "bar",
-
-      label: loai,
-      data,
-
-      backgroundColor: data.map(v =>
-        v > 0
-          ? color
-          : "rgba(255,255,255,0)"
-      ),
-
-      borderColor: data.map(v =>
-        v < 0
-          ? color
-          : "transparent"
-      ),
-
-      borderWidth: data.map(v =>
-        v < 0 ? 3 : 0
-      ),
-
-      /*
-       * THU = nét đứt
-       */
-      borderDash: [6, 5],
-
-      borderRadius: data.map(v =>
-        v > 0 ? 6 : 0
-      ),
-
-      maxBarThickness: 34,
-
-      stack: "money",
-
-      order: 2
-    });
-  });
-
-  /*
-   * ==========================================================
-   * ĐƯỜNG XU HƯỚNG
-   * ==========================================================
-   */
-
-  datasets.push({
-    type: "line",
-
-    label: "Giá trị ròng",
-
-    data: values,
-
-    borderColor: getCss("--cam"),
-
-    backgroundColor: getCss("--cam"),
-
-    borderWidth: 2,
-
-    pointRadius: 3,
-
-    pointHoverRadius: 5,
-
-    tension: 0.35,
-
-    order: 1
-  });
-
-  /*
-   * ==========================================================
-   * TRUNG VỊ
-   * ==========================================================
-   */
-
-  const median = computeMedian(values);
-
-  datasets.push({
-    type: "line",
-
-    label: "Trung vị",
-
-    data: days.map(() => median),
-
-    borderColor: getCss("--cam"),
-
-    borderWidth: 1.5,
-
-    borderDash: [6, 4],
-
-    pointRadius: 0,
-
-    order: 0
-  });
-
-  /*
-   * ==========================================================
-   * RENDER
-   * ==========================================================
-   */
-
-  const ctx =
-    document.getElementById("chart-ngay").getContext("2d");
+  // =========================
+  // DESTROY OLD CHART
+  // =========================
 
   if (dayChart) {
     dayChart.destroy();
+    dayChart = null;
   }
 
-  dayChart = new Chart(ctx, {
+
+  // =========================
+  // CREATE CHART
+  // =========================
+
+  dayChart = new Chart(canvas, {
+    type: "bar",
+
     data: {
       labels,
-      datasets
+
+      datasets: [
+  {
+    type: "bar",
+    label: "Chi tiêu",
+    data: values,
+
+    backgroundColor: "#3B82F6",
+    borderRadius: 4,
+
+    barPercentage: 0.75,
+    categoryPercentage: 0.8,
+
+    order: 2
+  },
+
+  {
+    type: "line",
+    label: "Đường xu hướng",
+    data: values,
+
+    borderColor: "#F59E0B",
+    backgroundColor: "#F59E0B",
+
+    borderWidth: 2.5,
+    pointRadius: 4,
+    pointHoverRadius: 6,
+
+    tension: 0.35,
+
+    fill: false,
+
+    order: 1
+  }
+]
     },
 
     options: {
-      ...baseChartOptions(),
-
-      interaction: {
-        mode: "index",
-        intersect: false
-      },
+      responsive: false,
+      maintainAspectRatio: false,
 
       scales: {
-        x: {
-          stacked: true,
+        y: {
+          beginAtZero: true,
 
-          grid: {
-            display: false
-          },
+          // IMPORTANT:
+          // use the REAL maximum, not visibleMax
+          max: realMax,
 
           ticks: {
-            color: "#64748B",
-            font: {
-              family: "'Be Vietnam Pro'",
-              size: 11
+            callback: function(value) {
+              if (value >= 1000000) {
+                return (value / 1000000)
+                  .toFixed(1)
+                  .replace(".0", "") + "tr";
+              }
+
+              if (value >= 1000) {
+                return (value / 1000)
+                  .toFixed(0) + "k";
+              }
+
+              return value;
             }
           }
         },
 
-        y: {
-          stacked: true,
-
+        x: {
           grid: {
-            color: "#F1F5F9"
-          },
-
-          ticks: {
-            color: "#64748B",
-
-            font: {
-              family: "'Be Vietnam Pro'",
-              size: 11
-            },
-
-            callback: v =>
-              formatVNDShort(v)
-          },
-
-          /*
-           * Làm trục 0 nổi bật hơn
-           */
-          border: {
-            color: "#CBD5E1",
-            width: 1.5
+            display: false
           }
         }
       },
 
       plugins: {
-        ...baseChartOptions().plugins,
-
         legend: {
           display: false
-        },
-
-        tooltip: {
-          backgroundColor: "#0F172A",
-
-          padding: 10,
-
-          cornerRadius: 8,
-
-          callbacks: {
-            label: ctx => {
-              const value = ctx.parsed.y;
-
-              if (ctx.dataset.type === "line") {
-                return `${ctx.dataset.label}: ${formatVND(value)} đ`;
-              }
-
-              if (value < 0) {
-                return `${ctx.dataset.label} • Thu: ${formatVND(Math.abs(value))} đ`;
-              }
-
-              return `${ctx.dataset.label} • Chi: ${formatVND(value)} đ`;
-            }
-          }
         }
       }
     }
   });
-}
 
+  // Start at the bottom so the normal view shows
+  // the bars from their base.
+  requestAnimationFrame(() => {
+    wrapEl.scrollTop = wrapEl.scrollHeight;
+  });
+}
 /* ---- Gộp dữ liệu theo Loại ---- */
 function computeCategoryValues() {
   const map = new Map();
@@ -1706,34 +1648,121 @@ function computeCategoryValues() {
 
 function renderCategoryChart() {
   if (!statsData) return;
+
   const { names, values } = computeCategoryValues();
 
   const total = values.reduce((a, b) => a + b, 0);
   setTotalBox("total-loai", total, "loai");
 
   const wrapEl = document.getElementById("chart-loai-wrap");
+
   if (names.length === 0) {
-    if (categoryChart) { categoryChart.destroy(); categoryChart = null; }
-    wrapEl.innerHTML = '<div class="chart-empty">Chưa có dữ liệu</div>';
+    if (categoryChart) {
+      categoryChart.destroy();
+      categoryChart = null;
+    }
+
+    wrapEl.innerHTML =
+      '<div class="chart-empty">Chưa có dữ liệu</div>';
+
     return;
   }
+
   if (!document.getElementById("chart-loai")) {
     wrapEl.innerHTML = '<canvas id="chart-loai"></canvas>';
   }
 
-  const minWidth = Math.max(names.length * CATEGORY_BAR_WIDTH_PX, 100);
-  wrapEl.style.width = names.length > DEFAULT_VISIBLE_DAYS ? minWidth + "px" : "100%";
+  // =========================
+  // WIDTH
+  // =========================
+
+  const minWidth = Math.max(
+    names.length * CATEGORY_BAR_WIDTH_PX,
+    100
+  );
+
+  wrapEl.style.width =
+    names.length > DEFAULT_VISIBLE_DAYS
+      ? minWidth + "px"
+      : "100%";
+
+
+  // =========================
+  // MEDIAN / Y RANGE
+  // =========================
 
   const median = computeMedian(values);
+
   const min = Math.min(...values);
   const max = Math.max(...values);
-  const barColors = values.map(v => interpolateColor(v, min, max, getCss("--xanh"), getCss("--xanhdam")));
 
-  const ctx = document.getElementById("chart-loai").getContext("2d");
-  if (categoryChart) categoryChart.destroy();
+  // Visible Y range = median × 2
+  // But don't let the viewport become ridiculously small.
+  const visibleMax = Math.max(
+    median * 2,
+    500000
+  );
+
+  const realMax = Math.max(
+    max,
+    visibleMax
+  );
+
+
+  // =========================
+  // CHART HEIGHT
+  // =========================
+
+  const BASE_HEIGHT = 420;
+
+  const scaleRatio =
+    realMax / visibleMax;
+
+  const chartHeight = Math.max(
+    BASE_HEIGHT * scaleRatio,
+    BASE_HEIGHT
+  );
+
+  wrapEl.style.height = "420px";
+
+  wrapEl.style.overflowY = "auto";
+  wrapEl.style.overflowX = "auto";
+
+  const canvas = document.getElementById("chart-loai");
+
+  canvas.style.height = chartHeight + "px";
+  canvas.style.width = "100%";
+
+
+  // =========================
+  // COLORS
+  // =========================
+
+  const barColors = values.map(v =>
+    interpolateColor(
+      v,
+      min,
+      max,
+      getCss("--xanh"),
+      getCss("--xanhdam")
+    )
+  );
+
+
+  // =========================
+  // CREATE CHART
+  // =========================
+
+  const ctx = canvas.getContext("2d");
+
+  if (categoryChart) {
+    categoryChart.destroy();
+  }
+
   categoryChart = new Chart(ctx, {
     data: {
       labels: names,
+
       datasets: [
         {
           type: "bar",
@@ -1744,6 +1773,7 @@ function renderCategoryChart() {
           maxBarThickness: 40,
           order: 2
         },
+
         {
           type: "line",
           label: "Xu hướng",
@@ -1755,6 +1785,7 @@ function renderCategoryChart() {
           tension: 0.35,
           order: 1
         },
+
         {
           type: "line",
           label: "Trung vị",
@@ -1767,10 +1798,36 @@ function renderCategoryChart() {
         }
       ]
     },
-    options: baseChartOptions()
+
+    options: {
+      ...baseChartOptions(),
+
+      responsive: false,
+      maintainAspectRatio: false,
+
+      scales: {
+        ...baseChartOptions().scales,
+
+        y: {
+          ...baseChartOptions().scales?.y,
+
+          beginAtZero: true,
+
+          // IMPORTANT:
+          // Keep the REAL maximum so huge columns
+          // continue beyond the visible viewport.
+          max: realMax
+        }
+      }
+    }
+  });
+
+
+  // Start at bottom
+  requestAnimationFrame(() => {
+    wrapEl.scrollTop = wrapEl.scrollHeight;
   });
 }
-
 /* ---- Cấu hình chung cho chart (SỬA Ở ĐÂY nếu muốn đổi style biểu đồ) ---- */
 function baseChartOptions() {
   return {
