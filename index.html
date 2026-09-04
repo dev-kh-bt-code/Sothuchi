@@ -1490,7 +1490,7 @@ function renderDayChart() {
   }
 
   // Visible Y range
-  const visibleMax = Math.max(median * 2, 1);
+  const visibleMax = 200000;
 
   // Real maximum
   const realMax = Math.max(...values, visibleMax);
@@ -1500,7 +1500,7 @@ function renderDayChart() {
   // CHART HEIGHT
   // =========================
 
-  const scaleRatio = realMax / visibleMax;
+  const scaleRatio = realMax / (visibleMax*10);
 
   // The viewport stays fixed.
   // The actual canvas becomes taller when there
